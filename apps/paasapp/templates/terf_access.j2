@@ -1,0 +1,66 @@
+terraform {
+  required_providers {
+    fortios = {
+      source  = "fortinetdev/fortios"
+      version = "1.17.0"
+    }
+  }
+}
+
+
+provider "fortios" {
+  hostname = "{{ utm_path }}"
+  token    = "{{ utm_token }}"
+  insecure = "true"
+}
+
+
+
+
+resource "fortios_firewall_policy" "{{ policy_name }}" {
+  action     = "{{ action }}"
+  logtraffic = "all"
+  name       = "{{ policy_name }}"
+  uuid       = "{{ policy_id }}"
+  schedule   = "{{ schedule }}"
+  nat        = "disable"
+
+
+  {% if access_type == "Server to Server" %}
+  vdomparam = "Farhang-IDC"
+  {% endif %}
+
+  dstaddr {
+    name = "{{ destination_name }}"
+  }
+
+  dstintf {
+    name = "{{ destination_interface }}"
+    }
+
+  service {
+    name = "{{ service }}"
+  }
+
+  srcaddr {
+    name = "{{ source_name }}"
+  }
+
+  {% if access_type == "User to Server" %}
+      users  {
+        name = "{{ user }}"
+      }
+  {% endif %}
+
+  {% if  access_type == "User Group to Server" %}
+      groups  {
+        name = "{{ group }}"
+      }
+  {% endif %}
+
+  srcintf {
+    name = "{{ source_interface }}"
+  }
+
+}
+
