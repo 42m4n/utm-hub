@@ -38,10 +38,6 @@ resource "fortios_firewall_policy" "{{ policy_name }}" {
     name = "{{ destination_interface }}"
     }
 
-  service {
-    name = "{{ service }}"
-  }
-
   srcaddr {
     name = "{{ source_name }}"
   }
@@ -62,5 +58,11 @@ resource "fortios_firewall_policy" "{{ policy_name }}" {
     name = "{{ source_interface }}"
   }
 
-}
 
+
+{% for service in services %}
+    service {
+    name = "{{ service }}"
+    }
+{% endfor %}
+ }

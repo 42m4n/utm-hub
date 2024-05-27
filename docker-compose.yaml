@@ -1,0 +1,123 @@
+services:
+  infra_api:
+    image: utm-automation
+    container_name: infra_api
+    networks:
+      - utm_automation
+      - traefik-net
+#   command: python manage.py runserver_plus 0.0.0.0:8001 --cert-file ./certs/full.crt --key-file ./certs/asax-2024.key
+    command: python manage.py runserver 0.0.0.0:8001
+    depends_on:
+      redis:
+        condition: service_healthy
+      rabbit:
+        condition: service_healthy
+    volumes:
+      - ../../test-infra:/opt/terraform
+      - ../../test-infra_resources:/opt/terraform_resources
+    env_file: ./config.env
+    environment:
+        CELERY_BROKER_URL: redis://redis:6379
+        CELERY_RESULT_BACKEND: redis://redis:6379/0
+        REDIS_HOST: redis
+        REDIS_CACHE_LOCATION: redis://redis:6379/2
+        RABBITMQ_HOST: rabbit
+        RABBITMQ_USERNAME: guest
+        RABBITMQ_PASSWORD: guest
+        RABBITMQ_EXCHANGE: ""
+        DJANGO_SETTING_DEBUG: True
+        LANSWEEPER_DB_HOST: fs-assetmgr-srv
+        UTMS: '[
+          {"UTM_NAME":"utm1","UTM_ADDRESS":"172.20.26.148","UTM_TOKEN":"60xnNkpdfz70H756h1m5HdrbQc4wkm"},
+          {"UTM_NAME":"utm2","UTM_ADDRESS":"192.168.0.2","UTM_TOKEN":"60xnNkpdfz70H756h1m5HdrbQc4wk2"}
+          ]'
+        PYTHONDONTWRITEBYTECODE: 1
+        PYTHONUNBUFFERED: 1
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-net"
+      - "traefik.http.routers.infra_api.entrypoints=http"
+      - "traefik.http.routers.infra_api.rule=Host(`${INFRA_SUB_DOMAIN}.${DOMAIN_NAME`)"
+      - "traefik.http.routers.infra_api.middlewares=https-redirect"
+      - "traefik.http.routers.infra_api-secure.entrypoints=https"
+      - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.infra_api-secure.rule=Host(`${INFRA_SUB_DOMAIN}.${DOMAIN_NAME`)"
+      - "traefik.http.routers.infra_api-secure.tls=true"
+      - "traefik.http.routers.infra_api-secure.tls.options=default"
+      - "traefik.http.routers.infra_api-secure.tls.certresolver=mycert"
+      - "traefik.http.services.infra_api.loadbalancer.server.port=80"      
+
+  queue_executor:
+    image: utm_automation
+    container_name: queue_executer
+    networks:
+      - utm_automation
+      - traefik-net
+    depends_on:
+      - redis
+    env_file: ./config.env
+    command: ["python", "queue_executer/proccess_queue.py"]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-net"
+      - "traefik.http.routers.queue_executor.entrypoints=http"
+      - "traefik.http.routers.queue_executor.rule=Host(`${QUEUE_SUB_DOMAIN}.${DOMAIN_NAME`)"
+      - "traefik.http.routers.queue_executor.middlewares=https-redirect"
+      - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.queue_executor-secure.entrypoints=https"
+      - "traefik.http.routers.queue_executor-secure.rule=Host(`${QUEUE_SUB_DOMAIN}.${DOMAIN_NAME`)"
+      - "traefik.http.routers.queue_executor-secure.tls=true"
+      - "traefik.http.routers.queue_executor-secure.tls.options=default"
+      - "traefik.http.routers.queue_executor-secure.tls.certresolver=mycert"
+      - "traefik.http.services.queue_executor.loadbalancer.server.port=80"      
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: redis
+    networks:
+      - utm_automation
+    healthcheck:
+      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+
+  rabbit:
+    image: rabbitmq:3-alpine
+    networks:
+      - utm_automation
+    healthcheck:
+        test: rabbitmq-diagnostics -q ping
+
+  traefik:
+    image: traefik:2.11
+    container_name: traefik
+    networks:
+      - traefik-net
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./cert:/cert:ro
+    command:
+      - --log.level=ERROR
+      - --log.filepath=/log-file.log
+      - --log.format=json
+      - --api=true
+      - --api.insecure=true
+      - --ping=true
+      - --accesslog=true
+      - --accesslog.fields.names.StartUTC=drop
+      - --accesslog.bufferingsize=250
+      - --providers.docker.endpoint=unix:///var/run/docker.sock
+      - --providers.docker.exposedbydefault=false
+      - --providers.docker.network=traefik-net
+      - --entrypoints.http.address=:80
+      - --entrypoints.https.address=:443
+      - --metrics.prometheus=true
+      - --entryPoints.metrics.address=:8082
+      - --metrics.prometheus.entryPoint=metrics
+      - --certificatesresolvers.myresolver.acme.enabled=false
+      - --certificatesresolvers.myresolver.certfile=/cert/certificate.crt
+      - --certificatesresolvers.myresolver.keyfile=/cert/privatekey.key
+
+networks:
+    utm_automation:
+      name: utm_automation
+    traefik-net:
+      name: traefik-net

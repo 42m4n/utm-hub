@@ -1,0 +1,53 @@
+stages:
+- build
+- deploy
+
+variables:
+  IMAGE: $CI_REGISTRY/group/project/image
+
+default:
+  interruptible: true
+  tags:
+  - docker
+  image: docker:dind
+  before_script:
+  - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+
+build-job:
+  stage: build
+  script:
+  - docker build -t $CI_REGISTRY/group/project/image:$CI_COMMIT_SHORT_SHA .
+  - docker push $IMAGE:$CI_COMMIT_SHORT_SHA
+  when: manual
+
+deploy-job:
+  stage: deploy
+  variables:
+    DOMAIN: ???
+    SERVER_NAME: production.???
+    HOSTNAME: production
+    SSH_USER: ???
+    SSH_PORT: 22
+    SERVICE_PATH: utm-automation
+  before_script:
+  - mkdir -p ~/.ssh
+  - chmod 700 ~/.ssh
+  - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+  - chmod 600 ~/.ssh/id_rsa
+  - eval "$(ssh-agent -s)"
+  - ssh-add ~/.ssh/id_rsa
+  - echo "Host server-utm" > ~/.ssh/config
+  - echo "  HostName $SERVER_NAME" >> ~/.ssh/config
+  - echo "  User $SSH_USER" >> ~/.ssh/config
+  - echo "  Port $SSH_PORT" >> ~/.ssh/config
+  - echo "  StrictHostKeyChecking no" >> ~/.ssh/config
+  script:
+  - |
+    scp docker-compose.yml server-utm
+    ssh server-utm "
+    docker compose -f compose.yml up -d
+    "
+  environment:
+    name: production
+    url: https://$DOMAIN
+  when: manual

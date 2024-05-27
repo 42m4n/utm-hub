@@ -178,6 +178,9 @@ def fill_trf_fields(policy_name, data, file_path):
         file_path (str): the path that main.tf file will create
     """
     try:
+        services = data.get("service")
+        services_list = services.split(',')
+
         policy_id = generate_uuid()
         file_loader = FileSystemLoader('apps/paasapp/templates')
         env = Environment(loader=file_loader)
@@ -189,7 +192,7 @@ def fill_trf_fields(policy_name, data, file_path):
             utm_token=UTM.utm_token,
             source_name=data.get('source_name'),
             destination_name=data.get('destination_name'),
-            service=data.get('service'),
+            services=services_list,
             action=data.get('action'),
             schedule=data.get('schedule'),
             source_interface=data.get('source_interface'),
