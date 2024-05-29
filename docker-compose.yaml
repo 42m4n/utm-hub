@@ -6,7 +6,6 @@ services:
     networks:
       - utm_automation
       - traefik-net
-#   command: python manage.py runserver_plus 0.0.0.0:8001 --cert-file ./certs/full.crt --key-file ./certs/asax-2024.key
     command: python infra-api/manage.py runserver 0.0.0.0:8000
     depends_on:
       redis:
@@ -25,13 +24,13 @@ services:
       - traefik.docker.network=traefik-net
       - traefik.http.routers.infra_api.entrypoints=http
       - traefik.http.routers.infra_api.rule=Host(`${INFRA_DOMAIN}`)
-#     - traefik.http.routers.infra_api.middlewares=https-redirect
+      - traefik.http.routers.infra_api.middlewares=https-redirect
       - traefik.http.routers.infra_api-secure.entrypoints=https
       - traefik.http.middlewares.https-redirect.redirectscheme.scheme=https
       - traefik.http.routers.infra_api-secure.rule=Host(`${INFRA_DOMAIN}`)
       - traefik.http.routers.infra_api-secure.tls=true
       - traefik.http.routers.infra_api-secure.tls.options=default
-#     - traefik.http.routers.infra_api-secure.tls.certresolver=mycert
+      - traefik.http.routers.infra_api-secure.tls.certresolver=mycert
       - traefik.http.services.infra_api.loadbalancer.server.port=8000
 
   queue_executor:
@@ -100,8 +99,8 @@ services:
       - --metrics.prometheus=true
       - --entryPoints.metrics.address=:8082
       - --metrics.prometheus.entryPoint=metrics
-#     - --providers.file.directory=/etc/traefik/
-#     - --providers.file.watch=true
+      - --providers.file.directory=/etc/traefik/
+      - --providers.file.watch=true
 networks:
     utm_automation:
       name: utm_automation
