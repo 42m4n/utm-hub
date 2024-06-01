@@ -1,108 +1,34 @@
+version: '3.7'
 services:
-  infra_api:
-    image: gitops.asax.ir/utm-automation:latest
-    container_name: infra_api
-    restart: unless-stopped
-    networks:
-      - utm_automation
-      - traefik-net
-    command: python infra-api/manage.py runserver 0.0.0.0:8000
-    depends_on:
-      redis:
-        condition: service_healthy
-      rabbit:
-        condition: service_healthy
-    volumes:
-      - ../../test-infra:/opt/terraform
-      - ../../test-infra_resources:/opt/terraform_resources
-    env_file:
-      - ./.env
-    environment:
-        DJANGO_SETTING_DEBUG: True
-    labels:
-      - traefik.enable=true
-      - traefik.docker.network=traefik-net
-      - traefik.http.routers.infra_api.entrypoints=http
-      - traefik.http.routers.infra_api.rule=Host(`${INFRA_DOMAIN}`)
-      - traefik.http.routers.infra_api.middlewares=https-redirect
-      - traefik.http.routers.infra_api-secure.entrypoints=https
-      - traefik.http.middlewares.https-redirect.redirectscheme.scheme=https
-      - traefik.http.routers.infra_api-secure.rule=Host(`${INFRA_DOMAIN}`)
-      - traefik.http.routers.infra_api-secure.tls=true
-      - traefik.http.routers.infra_api-secure.tls.options=default
-      - traefik.http.routers.infra_api-secure.tls.certresolver=mycert
-      - traefik.http.services.infra_api.loadbalancer.server.port=8000
+    backend:
+        image: infra_api:latest
+        container_name: backend
+        networks:
+          - utm_automation
+        command: python manage.py runserver_plus 0.0.0.0:8001 --cert-file ./certs/cert.pem --key-file ./certs/key.pem
 
-  queue_executor:
-    image: gitops.asax.ir/utm-automation:latest
-    container_name: queue_executer
-    restart: unless-stopped
-    networks:
-      - utm_automation
-      - traefik-net
-    depends_on:
-      redis:
-        condition: service_healthy
-      rabbit:
-        condition: service_healthy
-    env_file:
-      - ./.env
-    command: ["python", "queue_executor/proccess_queue.py"]
+        ports:
+            - "8001:8001"
+        depends_on:
+           - redis
 
-  redis:
-    image: repo.asax.ir/redis:7.2-alpine
-    container_name: redis
-    restart: always
-    networks:
-      - utm_automation
-    healthcheck:
-      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
 
-  rabbit:
-    image: repo.asax.ir/rabbitmq:3-alpine
-    container_name: rabbit
-    restart: always
-    networks:
-      - utm_automation
-    healthcheck:
-        test: rabbitmq-diagnostics -q ping
-    ports:
-      - 15672:15672
+    queue_executor:
+        image: queue_executer:latest
+        container_name: queue_executer
+        networks:
+          - utm_automation
+        depends_on:
+          - redis
 
-  traefik:
-    image: repo.asax.ir/traefik:2.11
-    restart: always
-    container_name: traefik
-    networks:
-      - traefik-net
-    ports:
-      - 80:80
-      - 443:443
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./certs:/etc/traefik/certs:ro
-    command:
-      - --log.level=ERROR
-      - --log.filepath=/log-file.log
-      - --log.format=json
-      - --api=true
-      - --api.insecure=true
-      - --ping=true
-      - --accesslog=true
-      - --accesslog.fields.names.StartUTC=drop
-      - --accesslog.bufferingsize=250
-      - --providers.docker.endpoint=unix:///var/run/docker.sock
-      - --providers.docker.exposedbydefault=false
-      - --providers.docker.network=traefik-net
-      - --entrypoints.http.address=:80
-      - --entrypoints.https.address=:443
-      - --metrics.prometheus=true
-      - --entryPoints.metrics.address=:8082
-      - --metrics.prometheus.entryPoint=metrics
-      - --providers.file.directory=/etc/traefik/
-      - --providers.file.watch=true
+    redis:
+        image: redis:latest
+        container_name: reids
+        ports:
+          - "6379:6379"
+        networks:
+          - utm_automation
+
 networks:
     utm_automation:
-      name: utm_automation
-    traefik-net:
-      name: traefik-net
+        name: utm_automation
