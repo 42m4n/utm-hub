@@ -18,7 +18,7 @@ def create_tf_files(resources, ticket_number):
     try:
         unique_name = generate_unique_name(ticket_number)
 
-        if settings.DEBUG:
+        if not settings.DEBUG:
             os.makedirs(f"{Terraform.terraform_resources_path}{unique_name}", exist_ok=True)
             logger.info(f'Directory {Terraform.terraform_resources_path}{unique_name} created ')
 

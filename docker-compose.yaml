@@ -1,6 +1,6 @@
 services:
   infra_api:
-    image: gitops.asax.ir/utm-automation:latest
+    image: gitops.asax.ir/infrastructure-automation-team/security-automation/access-rule-automation/utm-automation:latest
     container_name: infra_api
     restart: unless-stopped
     networks:
@@ -13,8 +13,8 @@ services:
       rabbit:
         condition: service_healthy
     volumes:
-      - ../../test-infra:/opt/terraform
-      - ../../test-infra_resources:/opt/terraform_resources
+      - /opt/terraform:/opt/terraform
+      - /opt/terraform_resources:/opt/terraform_resources
     env_file:
       - ./.env
     environment:
@@ -24,18 +24,17 @@ services:
       - traefik.docker.network=traefik-net
       - traefik.http.routers.infra_api.entrypoints=http
       - traefik.http.routers.infra_api.rule=Host(`${INFRA_DOMAIN}`)
-      - traefik.http.routers.infra_api.middlewares=https-redirect
+    # - traefik.http.routers.infra_api.middlewares=https-redirect
       - traefik.http.routers.infra_api-secure.entrypoints=https
       - traefik.http.middlewares.https-redirect.redirectscheme.scheme=https
       - traefik.http.routers.infra_api-secure.rule=Host(`${INFRA_DOMAIN}`)
       - traefik.http.routers.infra_api-secure.tls=true
       - traefik.http.routers.infra_api-secure.tls.options=default
-      - traefik.http.routers.infra_api-secure.tls.certresolver=mycert
       - traefik.http.services.infra_api.loadbalancer.server.port=8000
 
   queue_executor:
-    image: gitops.asax.ir/utm-automation:latest
-    container_name: queue_executer
+    image: gitops.asax.ir/infrastructure-automation-team/security-automation/access-rule-automation/utm-automation:latest
+    container_name: queue_executor
     restart: unless-stopped
     networks:
       - utm_automation
@@ -66,8 +65,6 @@ services:
       - utm_automation
     healthcheck:
         test: rabbitmq-diagnostics -q ping
-    ports:
-      - 15672:15672
 
   traefik:
     image: repo.asax.ir/traefik:2.11
@@ -80,7 +77,7 @@ services:
       - 443:443
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./certs:/etc/traefik/certs:ro
+    # - ./certs:/certs:ro
     command:
       - --log.level=ERROR
       - --log.filepath=/log-file.log
@@ -99,8 +96,7 @@ services:
       - --metrics.prometheus=true
       - --entryPoints.metrics.address=:8082
       - --metrics.prometheus.entryPoint=metrics
-      - --providers.file.directory=/etc/traefik/
-      - --providers.file.watch=true
+      
 networks:
     utm_automation:
       name: utm_automation

@@ -1,10 +1,12 @@
-FROM python:3.12-alpine
+FROM python:3.11
+WORKDIR /utm-automation
+RUN apt update
+RUN apt install -y curl
 
-RUN wget https://download.microsoft.com/download/3/5/5/355d7943-a338-41a7-858d-53b259ea33f5/msodbcsql18_18.3.3.1-1_amd64.apk
-RUN wget https://download.microsoft.com/download/3/5/5/355d7943-a338-41a7-858d-53b259ea33f5/mssql-tools18_18.3.1.1-1_amd64.apk
-
-RUN apk add --allow-untrusted msodbcsql18_18.3.3.1-1_amd64.apk mssql-tools18_18.3.1.1-1_amd64.apk
-RUN rm msodbcsql18_18.3.3.1-1_amd64.apk mssql-tools18_18.3.1.1-1_amd64.apk
+RUN sh -c "curl -s https://packages.microsoft.com/keys/microsoft.asc | apt-key add -" \
+    && sh -c "curl -s https://packages.microsoft.com/config/ubuntu/20.04/prod.list > /etc/apt/sources.list.d/mssql-release.list" \
+    && apt-get update \
+    && ACCEPT_EULA=Y apt-get install -y msodbcsql18 mssql-tools18 unixodbc-dev unixodbc
 
 COPY requirements.txt .
 RUN pip install -r requirements.txt

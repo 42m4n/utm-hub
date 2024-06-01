@@ -24,26 +24,25 @@ class RabbitMQHandler(logging.Handler):
     def connect(self):
         while True:
             try:
-
-                credentials = pika.PlainCredentials(username=RabbitMQ.username, password=RabbitMQ.password)
+                credentials = pika.PlainCredentials(username=RabbitMQ.username,
+                                                    password=RabbitMQ.password)
 
                 self.connection = pika.BlockingConnection(
-                    pika.ConnectionParameters(host=self.host, port=self.port, credentials=credentials, heartbeat=600))
+                                pika.ConnectionParameters(  host=self.host,
+                                                            port=self.port,
+                                                            credentials=credentials,
+                                                            heartbeat=600))
                 self.channel = self.connection.channel()
 
-                # check if queue exists in rabbitmq
-                queue_declare_ok = self.channel.queue_declare(queue=self.queue_name, durable=False, passive=True)
-                if not queue_declare_ok.method.queue:
-                    self.channel.queue_declare(queue=self.queue_name,
-                                               durable=False)
+                # Declare the queue (create if it doesn't exist)
+                self.channel.queue_declare(queue=self.queue_name, durable=False)
 
-                # Check if the exchange exists
-                exchange_declare_ok = self.channel.exchange_declare(exchange=self.exchange, exchange_type='direct',
-                                                                    passive=True)
-                if not exchange_declare_ok:
-                    self.channel.exchange_declare(exchange=self.exchange, exchange_type='direct')
+                # Declare the exchange (create if it doesn't exist)
+                self.channel.exchange_declare(exchange=self.exchange, exchange_type='direct')
 
-                self.channel.queue_bind(exchange=self.exchange, queue=self.queue_name, routing_key=self.routing_key)
+                self.channel.queue_bind(exchange=self.exchange,
+                                        queue=self.queue_name,
+                                        routing_key=self.routing_key)
                 break
             except pika.exceptions.StreamLostError:
                 print("Connection to Rabbitmq lost. Reconnecting...")

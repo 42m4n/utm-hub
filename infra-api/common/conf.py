@@ -12,15 +12,13 @@ class Terraform:
     terraform_base_path = os.getenv("TERRAFORM_BASE_PATH", "/opt/terraform/")
     terraform_resources_path = os.getenv("TERRAFORM_RESOURCES_PATH", "/opt/terraform_resources/")
     terraform_queue_path = os.getenv("TERRAFORM_QUEUE_PATH", "/opt/terraform_queue/queue.json")
-    terraform_log_path = os.getenv("TERRAFORM_LOG_PATH",
-                                   "/opt/terraform_log/logs.json")
+    terraform_log_path = os.getenv("TERRAFORM_LOG_PATH", "/opt/terraform_log/logs.json")
 
     # DEBUG TRUE
     local_terraform_base_path = os.getenv("LOCAL_TERRAFORM_BASE_PATH", "./terraform/")
     loca_terraform_resources_path = os.getenv("LOCA_TERRAFORM_RESOURCES_PATH", "./terraform_resources/")
     local_terraform_queue_path = os.getenv("LOCAL_TERRAFORM_QUEUE_PATH", "./terraform_queue/queue.json")
-    local_terraform_log_path = os.getenv("LOCAL_TERRAFORM_LOG_PATH",
-                                         "./terraform_log/logs.json")
+    local_terraform_log_path = os.getenv("LOCAL_TERRAFORM_LOG_PATH", "./terraform_log/logs.json")
 
     delay = int(os.getenv("TERRAFORM_DELAY", 10))
 
@@ -55,7 +53,7 @@ class LDAP:
     password = os.getenv("LDAP_PASSWORD", 'pYt8FggTaqvyD%hU')
     username = os.getenv("LDAP_USER_NAME", 'UTMAuto_ACC')
     bind_user = os.getenv("LDAP_BIND_USER",
-                          'CN=UTM Auto Service Account,OU=Service Account;OU=Users,OU=ASAX Objects,DC=asax,DC=local')
+        'CN=UTM Auto Service Account,OU=Service Account;OU=Users,OU=ASAX Objects,DC=asax,DC=local')
     groups_dn = os.getenv("LDAP_GROUPS_DN", 'OU=UTM ACCESS,OU=Groups,OU=ASAX Objects,DC=asax,DC=local')
 
 
@@ -89,4 +87,4 @@ class RabbitMQ:
     routing_key = os.getenv("RABBITMQ_ROUTING_KEY", 'logstash')
     username = os.getenv("RABBITMQ_USERNAME", 'pusheradmin')
     password = os.getenv("RABBITMQ_PASSWORD", '1qaz!QAZ')
-    queue_name = os.getenv("QUEUE_NAME", 'utm_automation_log')
+    queue_name = os.getenv("RABBITMQ_QUEUE_NAME", 'utm_automation_log')

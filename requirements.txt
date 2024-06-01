@@ -1,3 +1,4 @@
+--index-url=https://repo.asax.ir/repository/pypi-group1/simple
 Django==4.2.4
 requests==2.25.1
 djangorestframework==3.14.0
