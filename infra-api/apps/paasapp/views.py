@@ -10,6 +10,7 @@ from rest_framework.views import APIView
 from .modules.ldap import LDAPHandler
 from .modules.utm import UTMHandler
 from .tasks import create_tf_files
+from common.conf import UTM
 
 
 class ApiPaasView(APIView):
@@ -104,12 +105,38 @@ class UTMService(APIView):
         try:
             search_field = None
             params = request.GET.get('input_data')
+            utm_name = request.GET.get('utm_name')
             if params:
                 params = eval(params)
                 search_field = params.get('list_info').get('search_fields').get('name')
 
-            utm_handler = UTMHandler()
+            if not any(utm_name == utm.get("UTM_NAME") for utm in UTM.utms):
+                return JsonResponse(
+                    {"response_status":
+                        {
+                            "status_code": 4000,
+                            "messages": [{"status_code": 4000, "type": "failed",
+                                        "message": f"{utm_name} is not in the configurations"}],
+                            "status": "failed",
+                            }
+                        }
+                    )
+
+            utm_handler = UTMHandler(utm_name)
             services = utm_handler.get_services(search_field)
+            
+            if services is None:
+                return JsonResponse(
+                    {"response_status":
+                        {
+                            "status_code": 4000,
+                            "messages": [{"status_code": 4000, "type": "failed",
+                                        "message": f"Connecting to {utm_name} is timed out!"}],
+                            "status": "failed",
+                            }
+                        }
+                    )
+
             return JsonResponse(
                 {
                     "response_status": [
@@ -145,10 +172,37 @@ class UTMInterface(APIView):
         try:
             search_field = None
             params = request.GET.get('input_data')
+            utm_name = request.GET.get('utm_name')
             if params:
                 params = eval(params)
                 search_field = params.get('list_info').get('search_fields').get('name')
-            interfaces = UTMHandler().get_interfaces(search_field)
+            
+            if not any(utm_name == utm.get("UTM_NAME") for utm in UTM.utms):
+                return JsonResponse(
+                    {"response_status":
+                        {
+                            "status_code": 4000,
+                            "messages": [{"status_code": 4000, "type": "failed",
+                                        "message": f"{utm_name} is not in the configurations!"}],
+                            "status": "failed",
+                            }
+                        }
+                    )
+            
+            interfaces = UTMHandler(utm_name).get_interfaces(search_field)
+
+            if interfaces is None:
+                return JsonResponse(
+                    {"response_status":
+                        {
+                            "status_code": 4000,
+                            "messages": [{"status_code": 4000, "type": "failed",
+                                        "message": f"Connecting to {utm_name} is timed out!"}],
+                            "status": "failed",
+                            }
+                        }
+                    )
+            
             return JsonResponse(
                 {
                     "response_status": [

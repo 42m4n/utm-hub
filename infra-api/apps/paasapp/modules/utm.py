@@ -10,13 +10,17 @@ logger = logging.getLogger(__name__)
 
 
 class UTMHandler:
-    def __init__(self):
+    def __init__(self, utm_name):
+        self.utm_name = utm_name
+        self.utm_token = next((_['UTM_TOKEN'] for _ in UTM.utms if _['UTM_NAME'] == utm_name), None)
+        self.utm_path = next((_['UTM_ADDRESS'] for _ in UTM.utms if _['UTM_NAME'] == utm_name), None)
         self.headers = {
-            'Authorization': f'Bearer {UTM.utm_token}',
+            'Authorization': f'Bearer {self.utm_token}',
             'Content-Type': 'application/json'
         }
-        self.interfaces_url = f'https://{UTM.utm_path}/{UTM.utm_interfaces_api}'
-        self.services_url = f'https://{UTM.utm_path}/{UTM.utm_services_api}'
+        self.interfaces_url = f'https://{self.utm_path}/{UTM.utm_interfaces_api}'
+        self.services_url = f'https://{self.utm_path}/{UTM.utm_services_api}'
+        self.timeout = 20
 
     def get_services(self, search_field=None):
 
@@ -29,7 +33,7 @@ class UTMHandler:
         else:
             try:
                 logger.info('Get services from UTM')
-                response = requests.get(self.services_url, headers=self.headers, verify=False)
+                response = requests.get(self.services_url, headers=self.headers, verify=False, timeout=self.timeout)
                 response = response.json()
                 services = response.get('results')
                 result = []
@@ -44,6 +48,8 @@ class UTMHandler:
                 else:
                     cache.set('utm_services', result)
                 return result
+            except requests.exceptions.Timeout:
+                logger.error(f'Request to {self.utm_name} on {self.utm_path} timed out')
             except Exception as e:
                 logger.error(f'Error at getting utm services: {e}')
 
@@ -56,7 +62,7 @@ class UTMHandler:
         else:
             try:
                 logger.info('Get interfaces from UTM')
-                response = requests.get(self.interfaces_url, headers=self.headers, verify=False)
+                response = requests.get(self.interfaces_url, headers=self.headers, verify=False, timeout=self.timeout)
                 response = response.json()
                 services = response.get('results')
                 result = [{"name": "any", "id": 1}]
@@ -72,5 +78,7 @@ class UTMHandler:
                 else:
                     cache.set('utm_interfaces', result)
                 return result
+            except requests.exceptions.Timeout:
+                logger.error(f'Request to {self.utm_name} on {self.utm_path} timed out')
             except Exception as e:
                 logger.error(f'Error at getting utm interfaces: {e}')

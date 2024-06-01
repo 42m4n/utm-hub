@@ -1,7 +1,7 @@
 import os
 import pyodbc
 import redis
-
+import json 
 
 class BaseSetting:
     debug = os.getenv("DJANGO_SETTING_DEBUG", False)
@@ -24,18 +24,14 @@ class Terraform:
 
 
 class UTM:
-    utm_path = os.getenv("UTM_PATH", "172.24.1.33:1443")
-    utm_token = os.getenv("UTM_TOKEN", "75c3qpdG4QnG58jb1zpw996b36zyzH")
-
-    # utm_path = os.getenv("UTM_PATH", "172.20.26.148")
-    # utm_token = os.getenv("UTM_TOKEN", "17dfhsz6t4N80yxq60q7fcny30Qmng")
-
-    utm_user = os.getenv("UTM_USER", "admin")
-    utm_password = os.getenv("UTM_PASSWORD", "123456aA")
-
+    utms = json.loads(os.getenv(
+                "UTMS",'''[
+                    {"UTM_NAME":"utm1","UTM_ADDRESS":"172.24.1.33:1443","UTM_TOKEN":"75c3qpdG4QnG58jb1zpw996b36zyzH"},
+                    {"UTM_NAME":"utm2","UTM_ADDRESS":"172.20.26.148","UTM_TOKEN":"17dfhsz6t4N80yxq60q7fcny30Qmng"}
+                ]'''))
+    
     utm_interfaces_api = os.getenv("UTM_INTERFACES_API", 'api/v2/cmdb/system/interface')
     utm_services_api = os.getenv("UTM_SERVICES_API", 'api/v2/cmdb/firewall.service/custom')
-    utm_interfaces_path = f'https://{utm_path}/{utm_interfaces_api}'
 
 
 class Database:

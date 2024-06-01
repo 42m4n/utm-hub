@@ -1,4 +1,6 @@
+version: '3.7'
 services:
+<<<<<<< HEAD
   infra_api:
     image: gitops.asax.ir/infrastructure-automation-team/security-automation/access-rule-automation/utm-automation:latest
     container_name: infra_api
@@ -47,16 +49,22 @@ services:
     env_file:
       - ./.env
     command: ["python", "queue_executor/proccess_queue.py"]
+=======
+    backend:
+        image: infra_api:latest
+        container_name: backend
+        networks:
+          - utm_automation
+        command: python manage.py runserver_plus 0.0.0.0:8001 --cert-file ./certs/cert.pem --key-file ./certs/key.pem
 
-  redis:
-    image: repo.asax.ir/redis:7.2-alpine
-    container_name: redis
-    restart: always
-    networks:
-      - utm_automation
-    healthcheck:
-      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+        ports:
+            - "8001:8001"
+        depends_on:
+           - redis
+>>>>>>> main
 
+
+<<<<<<< HEAD
   rabbit:
     image: repo.asax.ir/rabbitmq:3-alpine
     container_name: rabbit
@@ -97,8 +105,24 @@ services:
       - --entryPoints.metrics.address=:8082
       - --metrics.prometheus.entryPoint=metrics
       
+=======
+    queue_executor:
+        image: queue_executer:latest
+        container_name: queue_executer
+        networks:
+          - utm_automation
+        depends_on:
+          - redis
+
+    redis:
+        image: redis:latest
+        container_name: reids
+        ports:
+          - "6379:6379"
+        networks:
+          - utm_automation
+
+>>>>>>> main
 networks:
     utm_automation:
-      name: utm_automation
-    traefik-net:
-      name: traefik-net
+        name: utm_automation

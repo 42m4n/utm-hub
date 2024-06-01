@@ -21,7 +21,7 @@ def create_requests_obj(udf_fields):
         "udf_sline_4202": "destination_interface",
         "udf_sline_4203": "service",
         "udf_sline_4560": "access_type",
-
+        "udf_utm_name" : "utm_name"  # udf_utm_name is different. change it with the actual name when it be ready.
     }
 
     new_object = {}
@@ -187,9 +187,9 @@ def fill_trf_fields(policy_name, data, file_path):
         template = env.get_template('terf_access.j2')
         trf_file = template.render(
             policy_id=policy_id,
-            utm_path=UTM.utm_path,
+            utm_path=next((_['UTM_ADDRESS'] for _ in UTM.utms if _['UTM_NAME'] == data.get('utm_name')), None),
+            utm_token=next((_['UTM_TOKEN'] for _ in UTM.utms if _['UTM_NAME'] == data.get('utm_name')), None),
             policy_name=policy_name,
-            utm_token=UTM.utm_token,
             source_name=data.get('source_name'),
             destination_name=data.get('destination_name'),
             services=services_list,
