@@ -1,15 +1,23 @@
 import logging
-import pika
 import time
+
+import pika
+
 from .conf import RabbitMQ
 
-logger = logging.getLogger('infra_api')
+logger = logging.getLogger("infra_api")
 
 
 class RabbitMQHandler(logging.Handler):
 
-    def __init__(self, host=RabbitMQ.host, port=RabbitMQ.port, exchange=RabbitMQ.exchange,
-                 routing_key=RabbitMQ.routing_key, queue_name=RabbitMQ.queue_name):
+    def __init__(
+        self,
+        host=RabbitMQ.host,
+        port=RabbitMQ.port,
+        exchange=RabbitMQ.exchange,
+        routing_key=RabbitMQ.routing_key,
+        queue_name=RabbitMQ.queue_name,
+    ):
 
         super().__init__()
         self.host = host
@@ -24,29 +32,42 @@ class RabbitMQHandler(logging.Handler):
     def connect(self):
         while True:
             try:
-
-                credentials = pika.PlainCredentials(username=RabbitMQ.username, password=RabbitMQ.password)
+                credentials = pika.PlainCredentials(
+                    username=RabbitMQ.username, password=RabbitMQ.password
+                )
 
                 self.connection = pika.BlockingConnection(
-                    pika.ConnectionParameters(host=self.host, port=self.port, credentials=credentials, heartbeat=600))
+                    pika.ConnectionParameters(
+                        host=self.host,
+                        port=self.port,
+                        credentials=credentials,
+                        heartbeat=600,
+                    )
+                )
                 self.channel = self.connection.channel()
 
-                # check if queue exists in rabbitmq
-                queue_declare_ok = self.channel.queue_declare(queue=self.queue_name, durable=False, passive=True)
-                if not queue_declare_ok.method.queue:
-                    self.channel.queue_declare(queue=self.queue_name,
-                                               durable=False)
+                # Declare the queue (create if it doesn't exist)
+                self.channel.queue_declare(queue=self.queue_name, durable=False)
 
-                # Check if the exchange exists
-                exchange_declare_ok = self.channel.exchange_declare(exchange=self.exchange, exchange_type='direct',
-                                                                    passive=True)
-                if not exchange_declare_ok:
-                    self.channel.exchange_declare(exchange=self.exchange, exchange_type='direct')
+                # Declare the exchange (create if it doesn't exist)
+                self.channel.exchange_declare(
+                    exchange=self.exchange, exchange_type="direct"
+                )
 
-                self.channel.queue_bind(exchange=self.exchange, queue=self.queue_name, routing_key=self.routing_key)
+                self.channel.queue_bind(
+                    exchange=self.exchange,
+                    queue=self.queue_name,
+                    routing_key=self.routing_key,
+                )
                 break
-            except pika.exceptions.StreamLostError:
-                print("Connection to Rabbitmq lost. Reconnecting...")
+            except (
+                pika.exceptions.AMQPConnectionError,
+                pika.exceptions.ChannelClosedByBroker,
+                pika.exceptions.AuthenticationError,
+                pika.exceptions.StreamLostError,
+                pika.exceptions.UnroutableError,
+            ) as e:
+                print(f"Connection to Rabbitmq lost.{e} Reconnecting...")
                 logger.warning("Connection to Rabbitmq lost. Reconnecting...")
                 time.sleep(1)
 
@@ -55,9 +76,13 @@ class RabbitMQHandler(logging.Handler):
             self.connect()
 
         message = self.format(record)
-        formatted_message = f"{record.asctime} | {record.filename} | {record.levelname} | {message}"
+        formatted_message = (
+            f"{record.asctime} | {record.filename} | {record.levelname} | {message}"
+        )
 
-        self.channel.basic_publish(exchange=self.exchange, routing_key=self.routing_key, body=formatted_message)
+        self.channel.basic_publish(
+            exchange=self.exchange, routing_key=self.routing_key, body=formatted_message
+        )
 
     def close(self):
         if self.connection and self.connection.is_open:

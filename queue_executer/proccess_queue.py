@@ -45,27 +45,41 @@ def process_queue():
     logger.info('Start queue process ... ')
     print('Start queue process ... ')
     while True:
-        queue_len = RedisConf.redis_client.llen(RedisConf.queue_name)
-        if queue_len > 0:
-            logger.info(f'Queue count: {queue_len} ')
-            print(f'Queue count: {queue_len} ')
+        try:
+            queue_len = RedisConf.redis_client.llen(RedisConf.queue_name)
+            if queue_len > 0:
+                logger.info(f'Queue count: {queue_len} ')
+                print(f'Queue count: {queue_len} ')
 
-            _, data = RedisConf.redis_client.brpop(RedisConf.queue_name)
-            data = eval(data)
-            logger.info(f'Received data from cache: {data}')
-            print(f'Queue object from cache: {data}')
+                _, data = RedisConf.redis_client.brpop(RedisConf.queue_name)
+                data = eval(data)
+                logger.info(f'Received data from cache: {data}')
+                print(f'Queue object from cache: {data}')
 
-            try:
-                result, success = apply_terraform(data)
-                if success:
-                    send_response_to_manage_engine(
-                        request_id=data.get('ticket_number'),
-                        source=data.get("resource").get("group") or data.get("resource").get("user") or data.get(
-                            "resource").get("source_name"),
-                        destination=data.get("resource").get("destination_name"),
-                        service=data.get("resource").get("service"),
-                        response_code="1")
-                else:
+                try:
+                    result, success = apply_terraform(data)
+                    if success:
+                        send_response_to_manage_engine(
+                            request_id=data.get('ticket_number'),
+                            source=data.get("resource").get("group") or data.get("resource").get("user") or data.get(
+                                "resource").get("source_name"),
+                            destination=data.get("resource").get("destination_name"),
+                            service=data.get("resource").get("service"),
+                            response_code="1")
+                    else:
+                        send_response_to_manage_engine(
+                            request_id=data.get('ticket_number'),
+                            source=data.get("resource").get("group") or data.get("resource").get("user") or data.get(
+                                "resource").get("source_name"),
+                            destination=data.get("resource").get("destination_name"),
+                            service=data.get("resource").get("service"),
+                            response_code="2")
+
+                    logger.info(f"UTM terraform result for {data.get('ticket_number')}: {result}")
+
+                except Exception as error:
+                    print(f'Error at apply terraform cause: {error}')
+                    logger.error(f'Error at apply terraform cause: {error}')
                     send_response_to_manage_engine(
                         request_id=data.get('ticket_number'),
                         source=data.get("resource").get("group") or data.get("resource").get("user") or data.get(
@@ -74,27 +88,19 @@ def process_queue():
                         service=data.get("resource").get("service"),
                         response_code="2")
 
-                logger.info(f"UTM terraform result for {data.get('ticket_number')}: {result}")
+                logger.info('Start delay for process queue ...')
+                print('Start delay for process queue ...')
+                sleep(TerraformConf.delay)
 
-            except Exception as error:
-                print(f'Error at apply terraform cause: {error}')
-                logger.error(f'Error at apply terraform cause: {error}')
-                send_response_to_manage_engine(
-                    request_id=data.get('ticket_number'),
-                    source=data.get("resource").get("group") or data.get("resource").get("user") or data.get(
-                        "resource").get("source_name"),
-                    destination=data.get("resource").get("destination_name"),
-                    service=data.get("resource").get("service"),
-                    response_code="2")
+            else:
+                print('No requests received ')
+                logger.warning('No requests received ')
+                sleep(60)
 
-            logger.info('Start delay for process queue ...')
-            print('Start delay for process queue ...')
-            sleep(TerraformConf.delay)
-
-        else:
-            print('No requests received ')
-            logger.warning('No requests received ')
-            sleep(60)
+        except Exception as e:
+            logger.error(f'Redis connection error: {e}')
+            print(f'Redis connection error: {e}')
+            sleep(2)
 
 
 if __name__ == "__main__":

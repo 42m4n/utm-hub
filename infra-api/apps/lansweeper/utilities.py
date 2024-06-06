@@ -10,7 +10,11 @@ def get_lansweeper_data(asset_name, row_count):
     try:
         # Check if the data is already cached
         cache_key = f'lansweeper_data:{asset_name}:{row_count}'
-        cached_data = cache.get(cache_key)
+        cached_data = None
+        try:
+            cached_data = cache.get(cache_key)
+        except Exception as e:
+            logger.warning(f"could not access cache: {e}")
         if cached_data:
             return cached_data
         query = f'''
@@ -28,7 +32,7 @@ def get_lansweeper_data(asset_name, row_count):
 
         query += " ORDER BY tblassets.AssetID"
 
-        connection_string = f'DRIVER={Database.odbc_driver};SERVER={Database.host};DATABASE={Database.db_name};UID={Database.user};PWD={Database.password};TrustServerCertificate=yes;'
+        connection_string = f'DRIVER={Database.odbc_driver()[0]};SERVER={Database.host};DATABASE={Database.db_name};UID={Database.user};PWD={Database.password};TrustServerCertificate=yes;'
         logger.info('Connecting to lansweeper db')
 
         connection = pyodbc.connect(connection_string)
@@ -46,7 +50,10 @@ def get_lansweeper_data(asset_name, row_count):
             }
             for row in data
         ]
-        cache.set(cache_key, json_data)
+        try:
+            cache.set(cache_key, json_data)
+        except Exception as e:
+            logger.warning(f'Could not set cache: {e}')
 
         return json_data
 
@@ -58,4 +65,4 @@ def get_lansweeper_data(asset_name, row_count):
             cursor.close()
         if connection is not None:
             connection.close()
-        logger.info('Close Lansweeper DB connection')
+            logger.info('Close Lansweeper DB connection')

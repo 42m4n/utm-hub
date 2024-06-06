@@ -25,7 +25,11 @@ class UTMHandler:
     def get_services(self, search_field=None):
 
         cache_key = f'utm_services_{search_field.lower()}' if search_field else 'utm_services'
-        cached_data = cache.get(cache_key)
+        cached_data = None
+        try:
+            cached_data = cache.get(cache_key)
+        except Exception as e:
+            logger.warning(f"could not access cache: {e}")
         if cached_data:
             logger.info('Get UTM services from cache')
 
@@ -44,9 +48,15 @@ class UTMHandler:
                     result = [i for i in result if
                               i['name'].lower().startswith(search_field.lower()) or (
                                       len(search_field) >= 3 and search_field.lower() in i['name'].lower())]
-                    cache.set(f'utm_services_{search_field}', result)
+                    try:
+                        cache.set(f'utm_services_{search_field}', result)
+                    except Exception as e:
+                        logger.warning(f'Could not set cache: {e}')
                 else:
-                    cache.set('utm_services', result)
+                    try:
+                        cache.set('utm_services', result)
+                    except Exception as e:
+                        logger.warning(f'Could not set cache: {e}')
                 return result
             except requests.exceptions.Timeout:
                 logger.error(f'Request to {self.utm_name} on {self.utm_path} timed out')
@@ -55,7 +65,11 @@ class UTMHandler:
 
     def get_interfaces(self, search_field=None):
         cache_key = f'utm_interfaces_{search_field.lower()}' if search_field else 'utm_interfaces'
-        cached_data = cache.get(cache_key)
+        cached_data = None
+        try:
+            cached_data = cache.get(cache_key)
+        except Exception as e:
+            logger.warning(f"could not access cache: {e}")
         if cached_data:
             logger.info('Get UTM interfaces from cache')
             return cached_data
@@ -74,9 +88,15 @@ class UTMHandler:
                     result = [i for i in result if
                               i['name'].lower().startswith(search_field.lower()) or (
                                       len(search_field) >= 3 and search_field.lower() in i['name'].lower())]
-                    cache.set(f'utm_interfaces_{search_field}', result)
+                    try:
+                        cache.set(f'utm_interfaces_{search_field}', result)
+                    except Exception as e:
+                        logger.warning(f'Could not set cache: {e}')
                 else:
-                    cache.set('utm_interfaces', result)
+                    try:
+                        cache.set('utm_interfaces', result)
+                    except Exception as e:
+                        logger.warning(f'Could not set cache: {e}')
                 return result
             except requests.exceptions.Timeout:
                 logger.error(f'Request to {self.utm_name} on {self.utm_path} timed out')

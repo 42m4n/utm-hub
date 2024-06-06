@@ -25,7 +25,11 @@ class LDAPHandler:
     def get_groups(self, search_field):
 
         cache_key = f'ldap_groups_{search_field.lower()}' if search_field else 'ldap_groups'
-        cached_data = cache.get(cache_key)
+        cached_data = None
+        try:
+            cached_data = cache.get(cache_key)
+        except Exception as e:
+            logger.warning(f"could not access cache: {e}")
         if cached_data:
             logger.info('Get LDAP groups from cache')
             return cached_data
@@ -51,9 +55,15 @@ class LDAPHandler:
                 group_names = [i for i in group_names if
                                i['name'].lower().startswith(search_field.lower()) or (
                                        len(search_field) >= 3 and search_field.lower() in i['name'].lower())]
-                cache.set(f'ldap_groups_{search_field}', group_names)
+                try:
+                    cache.set(f'ldap_groups_{search_field}', group_names)
+                except Exception as e:
+                        logger.warning(f'Could not set cache: {e}')
             else:
-                cache.set('ldap_groups', group_names)
+                try:
+                    cache.set('ldap_groups', group_names)
+                except Exception as e:
+                        logger.warning(f'Could not set cache: {e}')
             return group_names
 
     def get_users(self):

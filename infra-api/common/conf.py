@@ -42,7 +42,7 @@ class Database:
     port = int(os.getenv("LANSWEEPER_DB_PORT", 1433))
     user = os.getenv("LANSWEEPER_DB_USER", "Automation")
     password = os.getenv("LANSWEEPER_DB_PASSWORD", '2wsx3edc@WSX#EDC')
-    odbc_driver = pyodbc.drivers()[0]
+    odbc_driver = pyodbc.drivers
 
 
 class LDAP:
@@ -55,18 +55,18 @@ class LDAP:
     groups_dn = os.getenv("LDAP_GROUPS_DN", 'OU=UTM ACCESS,OU=Groups,OU=ASAX Objects,DC=asax,DC=local')
 
 
-class Celery:
-    celery_broker_url = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379")
-    celery_result_backend = os.getenv("CELERY_RESULT_BACKEND", "redis://localhost:6379/0")
-
-
 class Redis:
     host = os.getenv("REDIS_HOST", "localhost")
     port = os.getenv("REDIS_PORT", 6379)
     db = os.getenv("REDIS_DB", 1)
     queue_name = os.getenv("REDIS_QUEUE_NAME", "utm_queue")
     redis_client = redis.Redis(host=host, port=port, db=db)
-    redis_cache_location = os.getenv("REDIS_CACHE_LOCATION", "redis://localhost:6379/2")
+    redis_cache_location = os.getenv("REDIS_CACHE_LOCATION", f"redis://{host}:{port}/2")
+
+
+class Celery:
+    celery_broker_url = os.getenv("CELERY_BROKER_URL", f"redis://{Redis.host}:{Redis.port}")
+    celery_result_backend = os.getenv("CELERY_RESULT_BACKEND", f"redis://{Redis.host}:{Redis.port}/0")
 
 
 class ElasticSearch:
