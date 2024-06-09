@@ -16,7 +16,7 @@ services:
       - /opt/terraform:/opt/terraform
       - /opt/terraform_resources:/opt/terraform_resources
     env_file:
-      - ./infra-api/configs.env
+      - ./.env
     environment:
         DJANGO_SETTING_DEBUG: True
     labels:
@@ -45,7 +45,7 @@ services:
       rabbit:
         condition: service_healthy
     env_file:
-      - ./infra-api/configs.env
+      - ./.env
     command: ["python", "queue_executor/proccess_queue.py"]
 
   redis:

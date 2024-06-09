@@ -8,8 +8,7 @@ RUN sh -c "curl -s https://packages.microsoft.com/keys/microsoft.asc | apt-key a
     && apt-get update \
     && ACCEPT_EULA=Y apt-get install -y msodbcsql18 mssql-tools18 unixodbc-dev unixodbc
 
-COPY infra-api/requirements.txt .
+COPY requirements.txt .
 RUN pip install -r requirements.txt
 
 COPY . .
-

@@ -1,7 +1,6 @@
 import os
-import pyodbc
 import redis
-import json 
+
 
 class BaseSetting:
     debug = os.getenv("DJANGO_SETTING_DEBUG", False)
@@ -23,34 +22,10 @@ class Terraform:
     delay = int(os.getenv("TERRAFORM_DELAY", 10))
 
 
-class UTM:
-    utms = json.loads(os.getenv(
-                "UTMS",'''[
-                    {"UTM_NAME":"utm1","UTM_ADDRESS":"172.24.1.33:1443","UTM_TOKEN":"75c3qpdG4QnG58jb1zpw996b36zyzH"},
-                    {"UTM_NAME":"utm2","UTM_ADDRESS":"172.20.26.148","UTM_TOKEN":"17dfhsz6t4N80yxq60q7fcny30Qmng"}
-                ]'''))
-    
-    utm_interfaces_api = os.getenv("UTM_INTERFACES_API", 'api/v2/cmdb/system/interface')
-    utm_services_api = os.getenv("UTM_SERVICES_API", 'api/v2/cmdb/firewall.service/custom')
-
-
-class Database:
-    db_name = os.getenv("LANSWEEPER_DB_NAME", "lansweeperdb")
-    host = os.getenv("LANSWEEPER_DB_HOST", "s2-asset-srv")
-    port = int(os.getenv("LANSWEEPER_DB_PORT", 1433))
-    user = os.getenv("LANSWEEPER_DB_USER", "Automation")
-    password = os.getenv("LANSWEEPER_DB_PASSWORD", '2wsx3edc@WSX#EDC')
-    odbc_driver = pyodbc.drivers
-
-
-class LDAP:
-    server_name = os.getenv("LDAP_SERVER_NAME", 'DC01.asax.local')
-    server_ip = os.getenv("LDAP_SERVER_IP", '172.20.28.41')
-    password = os.getenv("LDAP_PASSWORD", 'pYt8FggTaqvyD%hU')
-    username = os.getenv("LDAP_USER_NAME", 'UTMAuto_ACC')
-    bind_user = os.getenv("LDAP_BIND_USER",
-        'CN=UTM Auto Service Account,OU=Service Account;OU=Users,OU=ASAX Objects,DC=asax,DC=local')
-    groups_dn = os.getenv("LDAP_GROUPS_DN", 'OU=UTM ACCESS,OU=Groups,OU=ASAX Objects,DC=asax,DC=local')
+class ManageEngine:
+    manage_engine_address = os.getenv("MANAGE_ENGINE_ADDRESS", "https://172.20.29.194")
+    manage_engine_token = os.getenv("MANAGE_ENGINE_TOKEN", "6619FACD-CB5D-430A-B564-705D0887E7D1")
+    manage_engine_done_status = os.getenv("MANAGE_ENGINE_DONE_STATUS", "4")
 
 
 class Redis:
@@ -59,12 +34,6 @@ class Redis:
     db = os.getenv("REDIS_DB", 1)
     queue_name = os.getenv("REDIS_QUEUE_NAME", "utm_queue")
     redis_client = redis.Redis(host=host, port=port, db=db)
-    redis_cache_location = os.getenv("REDIS_CACHE_LOCATION", f"redis://{host}:{port}/2")
-
-
-class Celery:
-    celery_broker_url = os.getenv("CELERY_BROKER_URL", f"redis://{Redis.host}:{Redis.port}")
-    celery_result_backend = os.getenv("CELERY_RESULT_BACKEND", f"redis://{Redis.host}:{Redis.port}/0")
 
 
 class ElasticSearch:
