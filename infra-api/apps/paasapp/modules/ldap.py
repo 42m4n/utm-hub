@@ -71,3 +71,16 @@ class LDAPHandler:
         users = self.conn.entries
         logger.info('Get Ldap users')
         return users
+
+    def get_user_ou(self, username):
+        self.conn.search(
+                        'DC=asax,DC=local',
+                        f'(sAMAccountName={username})',
+                        attributes=['distinguishedName']
+                        )
+        if self.conn.entries:
+            dn = self.conn.entries[0].distinguishedName.value
+            ou = [part for part in dn.split(',') if part.startswith('OU=')]
+            if ou:
+                return ou[0][3:]
+        return None
