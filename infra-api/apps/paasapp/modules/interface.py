@@ -1,7 +1,7 @@
 import ipaddress
 
-from ldap import LDAPHandler
-from utm import UTMHandler
+from .ldap import LDAPHandler
+from .utm import UTMHandler
 
 
 def incomming_interface_clients(username, utm_name=None):
@@ -38,7 +38,7 @@ def outgoing_interface_clients(ipaddr, utm_name=None):
     return None
 
 
-def incomming_interface_setver_to_server(ipaddr):
+def incomming_interface_server_to_server(ipaddr):
     try:
         ip = ipaddress.IPv4Address(ipaddr)
     except ValueError:
@@ -48,7 +48,7 @@ def incomming_interface_setver_to_server(ipaddr):
     return interface
 
 
-def outgoing_interface_setver_to_server(ipaddr):
+def outgoing_interface_server_to_server(ipaddr):
     try:
         ip = ipaddress.IPv4Address(ipaddr)
     except ValueError:
@@ -62,5 +62,5 @@ def outgoing_interface_setver_to_server(ipaddr):
     for network in list(networks.keys()):
         if ip in ipaddress.ip_network(network):
             return "IDC-Farhang1"
-    return incomming_interface_setver_to_server(ip)
+    return incomming_interface_server_to_server(ip)
     # TODO get the neworks from os variables

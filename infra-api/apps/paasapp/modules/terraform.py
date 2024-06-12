@@ -8,6 +8,12 @@ from random import randint
 from common.conf import UTM
 from jinja2 import Environment, FileSystemLoader
 
+from ...lansweeper.utilities import get_lansweeper_data
+from .interface import (incomming_interface_clients,
+                        incomming_interface_server_to_server,
+                        outgoing_interface_clients,
+                        outgoing_interface_server_to_server)
+
 logger = logging.getLogger(__name__)
 
 
@@ -21,7 +27,7 @@ def create_requests_obj(udf_fields):
         "udf_sline_4202": "destination_interface",
         "udf_sline_4203": "service",
         "udf_sline_4560": "access_type",
-        "udf_utm_name" : "utm_name"  # udf_utm_name is different. change it with the actual name when it be ready.
+        "udf_utm_name": "utm_name"  # udf_utm_name is different. change it with the actual name when it be ready.
     }
 
     new_object = {}
@@ -185,6 +191,20 @@ def fill_trf_fields(policy_name, data, file_path):
         file_loader = FileSystemLoader('apps/paasapp/templates')
         env = Environment(loader=file_loader)
         template = env.get_template('terf_access.j2')
+
+        if data.get('access_type') == "Server to Server":
+            src_ipaddr_json = get_lansweeper_data(data.get('source_name'), 1)
+            src_ipaddr = src_ipaddr_json['assets'][0]['ip']
+            dest_ipaddr_json = get_lansweeper_data(data.get('destination_name'), 1)
+            dest_ipaddr = dest_ipaddr_json['assets'][0]['ip']
+            source_interface = incomming_interface_server_to_server(src_ipaddr)
+            destination_interface = outgoing_interface_server_to_server(dest_ipaddr)
+        else:
+            source_interface = incomming_interface_clients(data.get(
+                'user'), data.get('utm_name'))
+            destination_interface = outgoing_interface_clients(data.get(
+                'destination_name'), data.get('utm_name'))
+
         trf_file = template.render(
             policy_id=policy_id,
             utm_path=next((_['UTM_ADDRESS'] for _ in UTM.utms if _['UTM_NAME'] == data.get('utm_name')), None),
@@ -195,8 +215,8 @@ def fill_trf_fields(policy_name, data, file_path):
             services=services_list,
             action=data.get('action'),
             schedule=data.get('schedule'),
-            source_interface=data.get('source_interface'),
-            destination_interface=data.get('destination_interface'),
+            source_interface=source_interface,
+            destination_interface=destination_interface,
             user=data.get('user'),
             group=data.get('group'),
             access_type=data.get('access_type')
