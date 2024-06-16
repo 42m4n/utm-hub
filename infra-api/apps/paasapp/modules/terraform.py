@@ -1,5 +1,4 @@
 import hashlib
-import json
 import logging
 import uuid
 from datetime import date
@@ -9,8 +8,8 @@ from common.conf import UTM
 from jinja2 import Environment, FileSystemLoader
 
 from ...lansweeper.utilities import get_lansweeper_data
-from .interface import (incomming_interface_clients,
-                        incomming_interface_server_to_server,
+from .interface import (incoming_interface_clients,
+                        incoming_interface_server_to_server,
                         outgoing_interface_clients,
                         outgoing_interface_server_to_server)
 
@@ -39,7 +38,7 @@ def create_requests_obj(udf_fields):
     if new_object['action'] == 'Grant': new_object['action'] = "accept"
     if new_object['action'] == 'Deny': new_object['action'] = "deny"
     if new_object['access_type'] != "Server to Server":
-        new_object['source_name'] = "all"
+        # new_object['source_name'] = "all"
         if new_object['access_type'] == "User to Server":
             new_object['user'] = udf_fields.get('udf_sline_3011').split("@")[0]
         if new_object['access_type'] == "User Group to Server":
@@ -95,11 +94,11 @@ def create_requests_list(udf_fields):
                     if key == "udf_sline_3011" and udf_fields[key]:
                         n_key = "user"
                         udf_fields[key] = udf_fields[key].split("@")[0]
-                        requests[i]["source_name"] = "all"
+#                       requests[i]["source_name"] = "all"
 
                     elif key == "udf_sline_3018" and udf_fields[key]:
                         n_key = "group"
-                        requests[i]["source_name"] = "all"
+#                       requests[i]["source_name"] = "all"
                     else:
                         n_key = "source_name"
 
@@ -188,22 +187,22 @@ def fill_trf_fields(policy_name, data, file_path):
         services_list = services.split(',')
 
         policy_id = generate_uuid()
-        file_loader = FileSystemLoader('apps/paasapp/templates')
+        file_loader = FileSystemLoader('infra-api/apps/paasapp/templates')
         env = Environment(loader=file_loader)
         template = env.get_template('terf_access.j2')
 
+        dest_ipaddr_json = get_lansweeper_data(data.get('destination_name'), 1)
+        dest_ipaddr = dest_ipaddr_json[0]['ip']
         if data.get('access_type') == "Server to Server":
             src_ipaddr_json = get_lansweeper_data(data.get('source_name'), 1)
-            src_ipaddr = src_ipaddr_json['assets'][0]['ip']
-            dest_ipaddr_json = get_lansweeper_data(data.get('destination_name'), 1)
-            dest_ipaddr = dest_ipaddr_json['assets'][0]['ip']
-            source_interface = incomming_interface_server_to_server(src_ipaddr)
+            src_ipaddr = src_ipaddr_json[0]['ip']
+            source_interface = incoming_interface_server_to_server(src_ipaddr)
             destination_interface = outgoing_interface_server_to_server(dest_ipaddr)
         else:
-            source_interface = incomming_interface_clients(data.get(
-                'user'), data.get('utm_name'))
-            destination_interface = outgoing_interface_clients(data.get(
-                'destination_name'), data.get('utm_name'))
+            source_interface = incoming_interface_clients(data.get(
+                'source_name').replace("@asax.ir", ""), data.get('utm_name'))
+            destination_interface = outgoing_interface_clients(
+                dest_ipaddr, data.get('utm_name'))
 
         trf_file = template.render(
             policy_id=policy_id,

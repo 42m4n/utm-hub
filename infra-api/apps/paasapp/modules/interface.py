@@ -4,8 +4,11 @@ from .ldap import LDAPHandler
 from .utm import UTMHandler
 
 
-def incomming_interface_clients(username, utm_name=None):
-    interface = LDAPHandler.get_user_ou(username)
+def incoming_interface_clients(username, utm_name=None):
+    ldap_handler = LDAPHandler()
+    ldap_handler.connect()
+    interface = ldap_handler.get_user_ou(username)
+    ldap_handler.disconnect()
     if interface == "Ams":
         return "Ams-teh"
     if interface == "Operations":
@@ -38,13 +41,14 @@ def outgoing_interface_clients(ipaddr, utm_name=None):
     return None
 
 
-def incomming_interface_server_to_server(ipaddr):
+def incoming_interface_server_to_server(ipaddr):
     try:
         ip = ipaddress.IPv4Address(ipaddr)
     except ValueError:
         print(f"Invalid IPv4 address: {ipaddr}")
         return None
-    interface = UTMHandler.get_interface_by_ip(ip)
+    utm_handler = UTMHandler()
+    interface = utm_handler.get_interface_by_ip(ip)
     return interface
 
 
@@ -62,5 +66,5 @@ def outgoing_interface_server_to_server(ipaddr):
     for network in list(networks.keys()):
         if ip in ipaddress.ip_network(network):
             return "IDC-Farhang1"
-    return incomming_interface_server_to_server(ip)
+    return incoming_interface_server_to_server(ip)
     # TODO get the neworks from os variables
