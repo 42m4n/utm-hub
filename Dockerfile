@@ -11,4 +11,10 @@ RUN sh -c "curl -s https://packages.microsoft.com/keys/microsoft.asc | apt-key a
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 
-COPY . .
+ADD https://releases.hashicorp.com/terraform/1.8.5/terraform_1.8.5_linux_amd64.zip /opt
+RUN unzip /opt/terraform_1.8.5_linux_amd64.zip -d /bin \
+    && rm /opt/terraform_1.8.5_linux_amd64.zip
+
+COPY terraform /opt/terraform
+COPY infra-api/ infra-api/
+COPY queue_executor/ queue_executor/

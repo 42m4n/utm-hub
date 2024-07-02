@@ -38,7 +38,7 @@ def create_requests_obj(udf_fields):
     if new_object['action'] == 'Grant': new_object['action'] = "accept"
     if new_object['action'] == 'Deny': new_object['action'] = "deny"
     if new_object['access_type'] != "Server to Server":
-        # new_object['source_name'] = "all"
+        new_object['source_name'] = "all"
         if new_object['access_type'] == "User to Server":
             new_object['user'] = udf_fields.get('udf_sline_3011').split("@")[0]
         if new_object['access_type'] == "User Group to Server":
@@ -94,11 +94,11 @@ def create_requests_list(udf_fields):
                     if key == "udf_sline_3011" and udf_fields[key]:
                         n_key = "user"
                         udf_fields[key] = udf_fields[key].split("@")[0]
-#                       requests[i]["source_name"] = "all"
+                        requests[i]["source_name"] = "all"
 
                     elif key == "udf_sline_3018" and udf_fields[key]:
                         n_key = "group"
-#                       requests[i]["source_name"] = "all"
+                        requests[i]["source_name"] = "all"
                     else:
                         n_key = "source_name"
 

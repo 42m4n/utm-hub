@@ -6,3 +6,4 @@
 !requirements.txt
 !queue_executor/
 !infra-api/
+!terraform/
