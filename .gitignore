@@ -170,3 +170,5 @@ infra-api/InfraApp/*.json
 infra-api/InfraApp/paasapp/__pycache__/
 infra-api/InfraApp/paasapp/migrations/__pycache__/
 infra-api/venv/
+
+terraform/
